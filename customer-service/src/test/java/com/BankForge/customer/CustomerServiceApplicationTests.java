@@ -1,5 +1,4 @@
-package com.BankForge.customer_service;
-
+package com.BankForge.customer;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
