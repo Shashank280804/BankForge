@@ -2,6 +2,7 @@ package com.BankForge.customer.service;
 
 import com.BankForge.customer.dto.CreateCustomerRequestDto;
 import com.BankForge.customer.dto.CustomerResponseDto;
+import com.BankForge.customer.dto.UpdateCustomerRequestDto;
 import com.BankForge.customer.entity.Customer;
 import com.BankForge.customer.exception.CustomerNotFoundException;
 import com.BankForge.customer.exception.DuplicateEmailException;
@@ -58,7 +59,30 @@ public class CustomerService {
         response.setCreatedAt(customer.getCreatedAt());
 
         return response;
+    }
 
+    public CustomerResponseDto updateCustomer(UUID id, UpdateCustomerRequestDto request){
+        Customer customer = customerRepository.findById(id).orElseThrow(()-> new CustomerNotFoundException("Customer not found with ID: " + id));
+
+        boolean emailUsedByAnotherCustomer = customerRepository.existsByEmailAndIdNot(request.getEmail(), id);
+
+        if(emailUsedByAnotherCustomer){
+            throw new DuplicateEmailException("Email is already registered: " + request.getEmail());
+        }
+        customer.setFullName(request.getFullName());
+        customer.setEmail(request.getEmail());
+        customer.setPhoneNumber(request.getPhoneNumber());
+
+        Customer updatedCustomer = customerRepository.save(customer);
+
+        return mapToResponseDto(updatedCustomer);
+    }
+
+    public void deleteCustomer(UUID id){
+
+        Customer customer = customerRepository.findById(id).orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + id));
+
+        customerRepository.delete(customer);
 
     }
 

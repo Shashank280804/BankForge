@@ -2,6 +2,7 @@ package com.BankForge.customer.controller;
 
 import com.BankForge.customer.dto.CreateCustomerRequestDto;
 import com.BankForge.customer.dto.CustomerResponseDto;
+import com.BankForge.customer.dto.UpdateCustomerRequestDto;
 import com.BankForge.customer.service.CustomerService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,19 @@ public class CustomerController {
     @GetMapping
     public List<CustomerResponseDto> getAllCustomers(){
         return customerService.getAllCustomers();
+    }
+
+    @PutMapping("/{id}")
+    public CustomerResponseDto updateCustomer(@PathVariable UUID id, @Valid @RequestBody UpdateCustomerRequestDto request){
+
+        return customerService.updateCustomer(id, request);
+
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCustomer(@PathVariable UUID id){
+        customerService.deleteCustomer(id);
     }
 
 
