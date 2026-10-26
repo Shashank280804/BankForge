@@ -14,11 +14,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class CustomerService {
     private final CustomerRepository customerRepository;
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("fullName", "email", "createdAt");
 
     public CustomerService(CustomerRepository customerRepository){
         this.customerRepository = customerRepository;
@@ -91,6 +93,17 @@ public class CustomerService {
     }
 
     public Page<CustomerResponseDto> getAllCustomers(int page, int size, String sortBy, String direction){
+
+        if(!ALLOWED_SORT_FIELDS.contains(sortBy)){
+            throw new IllegalArgumentException(
+            "Invalid sort field. Allowed values: " + ALLOWED_SORT_FIELDS);
+        }
+
+        if(!direction.equalsIgnoreCase("asc") && !direction.equalsIgnoreCase("desc")){
+            throw new IllegalArgumentException(
+                    "Invalid sort direction. Allowed values: asc, desc"
+            );
+        }
 
         Sort.Direction sortDirection = Sort.Direction.fromString(direction);
 

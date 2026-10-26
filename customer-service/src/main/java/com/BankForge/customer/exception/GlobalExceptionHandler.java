@@ -1,5 +1,6 @@
 package com.BankForge.customer.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -44,5 +45,30 @@ public class GlobalExceptionHandler {
         Map<String, Object> body = Map.of("errors", errors);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, String>> handleConstraintViolation(
+            ConstraintViolationException exception) {
+
+        Map<String, String> errors = new LinkedHashMap<>();
+
+        exception.getConstraintViolations().forEach(violation -> {
+            String field = violation.getPropertyPath()
+                    .toString()
+                    .substring(violation.getPropertyPath().toString().lastIndexOf('.') + 1);
+
+            errors.put(field, violation.getMessage());
+        });
+
+        return ResponseEntity.badRequest().body(errors);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgument(
+            IllegalArgumentException exception){
+
+        Map<String, String> body = Map.of("error", exception.getMessage());
+        return ResponseEntity.badRequest().body(body);
     }
 }

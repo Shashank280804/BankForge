@@ -5,13 +5,17 @@ import com.BankForge.customer.dto.CustomerResponseDto;
 import com.BankForge.customer.dto.UpdateCustomerRequestDto;
 import com.BankForge.customer.service.CustomerService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1/customers")
 public class CustomerController {
@@ -55,7 +59,12 @@ public class CustomerController {
 
     @GetMapping
     public Page<CustomerResponseDto> getAllCustomers(
-            @RequestParam(defaultValue = "0") int page,
+
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "Page must be zero or greater")
+            int page,
+            @Min(value = 1, message = "Page size must be at least 1")
+            @Max(value = 100, message = "Page size cannot exceed 100")
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String direction){
