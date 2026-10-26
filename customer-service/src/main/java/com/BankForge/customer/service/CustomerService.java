@@ -3,6 +3,8 @@ package com.BankForge.customer.service;
 import com.BankForge.customer.dto.CreateCustomerRequestDto;
 import com.BankForge.customer.dto.CustomerResponseDto;
 import com.BankForge.customer.entity.Customer;
+import com.BankForge.customer.exception.CustomerNotFoundException;
+import com.BankForge.customer.exception.DuplicateEmailException;
 import com.BankForge.customer.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,9 @@ public class CustomerService {
     }
 
     public CustomerResponseDto createCustomer(CreateCustomerRequestDto request){
+        if(customerRepository.existsByEmail(request.getEmail())){
+            throw new DuplicateEmailException("Email is already registered: " + request.getEmail());
+        }
         Customer customer = new Customer();
 
         customer.setFullName(request.getFullName());
@@ -31,7 +36,7 @@ public class CustomerService {
     }
 
     public CustomerResponseDto  getCustomerById(UUID id){
-        Customer customer = customerRepository.findById(id).orElseThrow();
+        Customer customer = customerRepository.findById(id).orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID " + id));
         return mapToResponseDto(customer);
     }
 
