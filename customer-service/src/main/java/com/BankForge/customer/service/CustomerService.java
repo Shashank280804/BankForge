@@ -7,6 +7,10 @@ import com.BankForge.customer.entity.Customer;
 import com.BankForge.customer.exception.CustomerNotFoundException;
 import com.BankForge.customer.exception.DuplicateEmailException;
 import com.BankForge.customer.repository.CustomerRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -41,12 +45,12 @@ public class CustomerService {
         return mapToResponseDto(customer);
     }
 
-    public List<CustomerResponseDto> getAllCustomers(){
-        return customerRepository.findAll()
-                .stream()
-                .map(this :: mapToResponseDto)
-                .toList();
-    }
+//    public List<CustomerResponseDto> getAllCustomers(){
+//        return customerRepository.findAll()
+//                .stream()
+//                .map(this :: mapToResponseDto)
+//                .toList();
+//    }
 
     private CustomerResponseDto mapToResponseDto(Customer customer){
         CustomerResponseDto response = new CustomerResponseDto();
@@ -83,6 +87,17 @@ public class CustomerService {
         Customer customer = customerRepository.findById(id).orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + id));
 
         customerRepository.delete(customer);
+
+    }
+
+    public Page<CustomerResponseDto> getAllCustomers(int page, int size, String sortBy, String direction){
+
+        Sort.Direction sortDirection = Sort.Direction.fromString(direction);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+
+        return customerRepository.findAll(pageable)
+                .map(this::mapToResponseDto);
 
     }
 
