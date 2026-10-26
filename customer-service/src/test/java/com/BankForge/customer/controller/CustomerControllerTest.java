@@ -84,6 +84,40 @@ class CustomerControllerTest {
         verifyNoInteractions(customerService);
     }
 
+
+    @Test
+    void getCustomerById_shouldReturn200_whenCustomerExists() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        CustomerResponseDto response = new CustomerResponseDto();
+        response.setId(id);
+        response.setFullName("Rahul Sharma");
+        response.setEmail("rahul@example.com");
+        response.setStatus(CustomerStatus.ACTIVE);
+        response.setPhoneNumber("9876543210");
+
+        when(customerService.getCustomerById(id)).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/customers/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                .andExpect(jsonPath("$.fullName").value("Rahul Sharma"))
+                .andExpect(jsonPath("$.email").value("rahul@example.com"));
+    }
+
+    @Test
+    void deleteCustomer_shouldReturn204_whenCustomerExists() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        doNothing().when(customerService).deleteCustomer(id);
+
+        mockMvc.perform(delete("/api/v1/customers/{id}", id))
+                .andExpect(status().isNoContent());
+
+        verify(customerService).deleteCustomer(id);
+    }
+
+
     @Test
     void getCustomerById_shouldReturn404_whenCustomerDoesNotExist()
             throws Exception {
