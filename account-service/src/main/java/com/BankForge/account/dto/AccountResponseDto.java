@@ -18,5 +18,5 @@ public class AccountResponseDto {
     private String currency;
     private AccountStatus status;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAT;
+    private LocalDateTime updatedAt;
 }
