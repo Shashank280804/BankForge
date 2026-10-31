@@ -1,74 +1,118 @@
 package com.BankForge.customer.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.validation.BindException;
 
-
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Customer Not Found - 404
     @ExceptionHandler(CustomerNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleCustomerNotFound(CustomerNotFoundException exception){
-        Map<String, String> body = Map.of("error", exception.getMessage());
+    public ResponseEntity<ApiErrorResponse> handleCustomerNotFound(
+            CustomerNotFoundException exception,
+            HttpServletRequest request) {
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+        return buildErrorResponse(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage(),
+                request
+        );
     }
 
+    // Duplicate Email - 409
     @ExceptionHandler(DuplicateEmailException.class)
-    public ResponseEntity<Map<String, String>> handleEmailAlreadyExists(DuplicateEmailException exception){
-        Map<String, String> body = Map.of("error", exception.getMessage());
+    public ResponseEntity<ApiErrorResponse> handleDuplicateEmail(
+            DuplicateEmailException exception,
+            HttpServletRequest request) {
 
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+        return buildErrorResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request
+        );
     }
 
-
+    // Request Validation Failure - 400
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException exception) {
+    public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request) {
 
-        Map<String, String> errors = new LinkedHashMap<>();
-
-        exception.getBindingResult()
+        String message = exception.getBindingResult()
                 .getFieldErrors()
-                .forEach(error ->
-                        errors.put(error.getField(), error.getDefaultMessage())
-                );
+                .stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .findFirst()
+                .orElse("Invalid request");
 
-        Map<String, Object> body = Map.of("errors", errors);
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                message,
+                request
+        );
     }
 
+    // Constraint Violation - 400
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, String>> handleConstraintViolation(
-            ConstraintViolationException exception) {
+    public ResponseEntity<ApiErrorResponse> handleConstraintViolation(
+            ConstraintViolationException exception,
+            HttpServletRequest request) {
 
-        Map<String, String> errors = new LinkedHashMap<>();
-
-        exception.getConstraintViolations().forEach(violation -> {
-            String field = violation.getPropertyPath()
-                    .toString()
-                    .substring(violation.getPropertyPath().toString().lastIndexOf('.') + 1);
-
-            errors.put(field, violation.getMessage());
-        });
-
-        return ResponseEntity.badRequest().body(errors);
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request
+        );
     }
 
+    // Illegal Argument - 400
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalArgument(
-            IllegalArgumentException exception){
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(
+            IllegalArgumentException exception,
+            HttpServletRequest request) {
 
-        Map<String, String> body = Map.of("error", exception.getMessage());
-        return ResponseEntity.badRequest().body(body);
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request
+        );
+    }
+
+    // Unexpected Exception - 500
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiErrorResponse> handleGenericException(
+            Exception exception,
+            HttpServletRequest request) {
+
+        return buildErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred",
+                request
+        );
+    }
+
+    // Common Error Response Builder
+    private ResponseEntity<ApiErrorResponse> buildErrorResponse(
+            HttpStatus status,
+            String message,
+            HttpServletRequest request) {
+
+        ApiErrorResponse error = new ApiErrorResponse();
+
+        error.setTimestamp(LocalDateTime.now());
+        error.setStatus(status.value());
+        error.setError(status.getReasonPhrase());
+        error.setMessage(message);
+        error.setPath(request.getRequestURI());
+
+        return ResponseEntity.status(status).body(error);
     }
 }

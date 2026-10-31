@@ -15,7 +15,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.UUID;
 
@@ -121,6 +120,7 @@ class CustomerControllerTest {
     @Test
     void getCustomerById_shouldReturn404_whenCustomerDoesNotExist()
             throws Exception {
+
         UUID id = UUID.randomUUID();
 
         when(customerService.getCustomerById(id))
@@ -129,7 +129,11 @@ class CustomerControllerTest {
 
         mockMvc.perform(get("/api/v1/customers/{id}", id))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error")
-                        .value("Customer not found with ID: " + id));
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value(
+                        "Customer not found with ID: " + id))
+                .andExpect(jsonPath("$.path").value(
+                        "/api/v1/customers/" + id));
     }
 }
