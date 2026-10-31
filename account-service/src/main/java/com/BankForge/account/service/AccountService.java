@@ -43,7 +43,8 @@ public class AccountService {
 
 
     }
-
+    
+    @Transactional
     public AccountResponseDto getAccountById(UUID id){
         Account account = accountRepository.findById(id).orElseThrow(()-> new AccountNotFoundException(
                 "Account not found with ID: " + id
@@ -52,7 +53,7 @@ public class AccountService {
         return toResponse(account);
 
     }
-
+    @Transactional
     public Page<AccountResponseDto> getAllAccounts(
             int page,
             int size,
@@ -109,7 +110,7 @@ public class AccountService {
                 .map(this::toResponse);
     }
 
-
+    @Transactional
     public AccountResponseDto updateAccount(UUID id, UpdateAccountRequestDto request){
 
         Account account = accountRepository.findById(id)
@@ -157,9 +158,9 @@ public class AccountService {
             );
         }
 
-        if (account.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+        if (account.getBalance().compareTo(BigDecimal.ZERO) != 0) {
             throw new IllegalArgumentException(
-                    "Account cannot be closed because it has a remaining balance"
+                    "Account cannot be closed unless its balance is zero"
             );
         }
 
