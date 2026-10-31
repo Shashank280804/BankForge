@@ -1,7 +1,8 @@
 package com.BankForge.account.service;
 
 import com.BankForge.account.dto.AccountResponseDto;
-import com.BankForge.account.dto.CreateAccountRequest;
+import com.BankForge.account.dto.CreateAccountRequestDto;
+import com.BankForge.account.dto.UpdateAccountRequestDto;
 import com.BankForge.account.entity.Account;
 import com.BankForge.account.entity.AccountStatus;
 import com.BankForge.account.exception.AccountNotFoundException;
@@ -25,7 +26,7 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountResponseDto createAccount(CreateAccountRequest request){
+    public AccountResponseDto createAccount(CreateAccountRequestDto request){
         Account account = new Account();
 
         account.setCustomerId(request.getCustomerId());
@@ -64,6 +65,46 @@ public class AccountService {
 
         return accountRepository.findAll(pageable)
                 .map(this::toResponse);
+    }
+
+
+    public AccountResponseDto updateAccount(UUID id, UpdateAccountRequestDto request){
+
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "Account not found with ID: " + id
+                ));
+
+        account.setStatus(request.getStatus());
+
+        Account updatedAccount = accountRepository.save(account);
+
+        return toResponse(updatedAccount);
+    }
+
+    @Transactional
+    public void closeAccount(UUID id) {
+
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "Account not found with ID: " + id
+                ));
+
+        if (account.getStatus() == AccountStatus.CLOSED) {
+            throw new IllegalArgumentException(
+                    "Account is already closed"
+            );
+        }
+
+        if (account.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+            throw new IllegalArgumentException(
+                    "Account cannot be closed because it has a remaining balance"
+            );
+        }
+
+        account.setStatus(AccountStatus.CLOSED);
+
+        accountRepository.save(account);
     }
 
     private String generateAccountNumber(){
