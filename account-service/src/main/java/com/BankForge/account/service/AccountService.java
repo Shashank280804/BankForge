@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -53,9 +54,50 @@ public class AccountService {
     }
 
     public Page<AccountResponseDto> getAllAccounts(
-            int page, int size, String sortBy, String direction) {
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
 
-        Sort.Direction sortDirection = Sort.Direction.fromString(direction);
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                    "Page number cannot be negative"
+            );
+        }
+
+        if (size < 1 || size > 100) {
+            throw new IllegalArgumentException(
+                    "Page size must be between 1 and 100"
+            );
+        }
+
+        Set<String> allowedSortFields = Set.of(
+                "id",
+                "customerId",
+                "accountNumber",
+                "accountType",
+                "balance",
+                "currency",
+                "status",
+                "createdAt",
+                "updatedAt"
+        );
+
+        if (!allowedSortFields.contains(sortBy)) {
+            throw new IllegalArgumentException(
+                    "Invalid sorting field: " + sortBy
+            );
+        }
+
+        Sort.Direction sortDirection;
+
+        try {
+            sortDirection = Sort.Direction.fromString(direction);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException(
+                    "Invalid sorting direction. Use 'asc' or 'desc'"
+            );
+        }
 
         Pageable pageable = PageRequest.of(
                 page,
@@ -74,6 +116,25 @@ public class AccountService {
                 .orElseThrow(() -> new AccountNotFoundException(
                         "Account not found with ID: " + id
                 ));
+
+
+        if (account.getStatus() == AccountStatus.CLOSED) {
+            throw new IllegalArgumentException(
+                    "Closed accounts cannot be updated"
+            );
+        }
+
+        if (account.getStatus() == request.getStatus()) {
+            throw new IllegalArgumentException(
+                    "Account already has the requested status"
+            );
+        }
+
+        if (request.getStatus() == AccountStatus.CLOSED) {
+            throw new IllegalArgumentException(
+                    "Use the close account operation to close an account"
+            );
+        }
 
         account.setStatus(request.getStatus());
 
